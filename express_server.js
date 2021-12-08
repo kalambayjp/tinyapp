@@ -44,6 +44,12 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);        
 });
 
+// edit an existing URL
+app.post('/urls/:id', (req, res) => {
+  urlDatabase[req.params.id] = req.body.newURL
+  res.redirect('/urls');
+});
+
 
 // create page with specific short and long URL data
 app.get('/urls/:shortURL', (req, res) => {
