@@ -23,7 +23,7 @@ function generateRandomString() {
 };
 //route to home page with list of URLs
 app.get('/urls', (req, res) => {
-  const templateVars = {urls: urlDatabase};
+  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
   res.render('urls_index', templateVars)
 });
         // create post request to delete URL
@@ -36,7 +36,8 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 // route to create new URL page
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {username: req.cookies["username"]}
+  res.render("urls_new", templateVars);
 });
         // post to create new short/long URL pair
 app.post("/urls", (req, res) => {
@@ -54,7 +55,7 @@ app.post('/urls/:id', (req, res) => {
 
 // create page with specific short and long URL data
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]}
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]}
   res.render('urls_show', templateVars)
 })
        // create link to full length url page from shor URL
@@ -64,13 +65,17 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 
-//route to login page
+// route for login
 app.post('/login', (req, res) => {
   res.cookie('username', req.body.username);
-  // console.log('username -->', req.body.Username);
-  console.log( 'cookie -->', req.cookies);
   res.redirect('/urls');
-})
+});
+
+// route for logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
 
 
 
