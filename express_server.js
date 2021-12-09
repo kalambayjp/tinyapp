@@ -3,6 +3,7 @@ const app = express();
 const port = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const {verifyEmail, verifyLogin} = require('./helpers')
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.set('view engine', 'ejs');
@@ -94,6 +95,16 @@ app.get('/register', (req, res) => {
 
 // register endpoint
 app.post('/register', (req, res) => {
+  // fetch data
+  const email = req.body.email;
+  
+  const result = verifyEmail(email, users);
+
+  if (result.error) {
+    console.log(result.error);
+    return res.redirect('/register');
+  }
+  
   const userId = generateRandomString();
   users[userId] = {  
     "id": userId,
@@ -106,16 +117,31 @@ app.post('/register', (req, res) => {
 });
 
 
+app.get('/login', (req, res) => {
+  const templateVars = {email: ""}
+  res.render('login', templateVars)
+})
+
+
 // route for login
 app.post('/login', (req, res) => {
-  for (const user in users) {
-    if (users[user]["email"] === req.body.email) {
-      res.cookie('user_id', user)
-      res.redirect('/urls'); 
-    }
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const result = verifyLogin(email, password, users);
+
+  if (result.error) {
+    console.log(result.error);
+    return res.redirect('/login');
   }
-  res.redirect('/register');
+
+  const cookie = result.data.id;
+  res.cookie('user_id', cookie);
+
+  res.redirect('/urls');
 });
+
+
 
 // route for logout
 app.post('/logout', (req, res) => {
