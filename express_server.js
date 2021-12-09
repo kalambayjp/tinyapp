@@ -2,9 +2,11 @@ const express = require('express');
 const app = express();
 const port = 8080;
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
+app.use(cookieParser());
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -38,7 +40,6 @@ app.get("/urls/new", (req, res) => {
 });
         // post to create new short/long URL pair
 app.post("/urls", (req, res) => {
-   
   const shortURL = generateRandomString()
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);        
@@ -56,11 +57,20 @@ app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]}
   res.render('urls_show', templateVars)
 })
-       // ceate link to full length url page from shor URL
+       // create link to full length url page from shor URL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
+
+
+//route to login page
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  // console.log('username -->', req.body.Username);
+  console.log( 'cookie -->', req.cookies);
+  res.redirect('/urls');
+})
 
 
 
