@@ -9,21 +9,45 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.set('view engine', 'ejs');
 app.use(cookieParser());
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+class Url {
+  constructor(longURL, userId) {
+    this.longURL = longURL;
+    this.userId = userId;
+  }
 };
+
+const urlDatabase = {
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userId: "userRandomID"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userId: "user2RandomID"
+  }
+};
+
+class User {
+  constructor(id, email, password, loggedIn) {
+    this.id = id;
+    this.email = email;
+    this.password = password;
+    this.loggedIn = loggedIn;
+  }
+}
 
 let users = { 
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "purple-monkey-dinosaur",
+    loggedIn: false
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: "dishwasher-funk",
+    loggedIn: false
   }
 }
 
@@ -37,7 +61,7 @@ function generateRandomString() {
 };
 //route to home page with list of URLs
 app.get('/urls', (req, res) => {
-  const templateVars = {urls: urlDatabase, email: ""};
+  const templateVars = {urlDatabase, email: ""};
   if (users[req.cookies.user_id]) {
     templateVars.email = users[req.cookies.user_id]["email"];
   }
@@ -54,28 +78,37 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 // route to create new URL page
 app.get("/urls/new", (req, res) => {
   const templateVars = {email: ""};
-  if (users[req.cookies.user_id]) {
-    templateVars.email = users[req.cookies.user_id]["email"];
+
+  if (!req.cookies.user_id) {
+    return res.redirect('/login');
   }
-  res.render("urls_new", templateVars);
+  
+  const currentUser = users[req.cookies.user_id];
+
+  if (currentUser.loggedIn === true) {  
+    templateVars.email = currentUser.email;
+    res.render("urls_new", templateVars);
+  } 
 });
         // post to create new short/long URL pair
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString()
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = new Url(req.body.longURL, req.cookies.user_id)
   res.redirect(`/urls/${shortURL}`);        
 });
 
 // edit an existing URL
 app.post('/urls/:id', (req, res) => {
-  urlDatabase[req.params.id] = req.body.newURL
+  const shortUrl = req.params.id
+  urlDatabase[shortUrl].longURL = req.body.newURL
   res.redirect('/urls');
 });
 
 
 // create page with specific short and long URL data
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], email: ""}
+  
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email: ""}
   if (users[req.cookies.user_id]) {
     templateVars.email = users[req.cookies.user_id]["email"];
   }
@@ -83,7 +116,7 @@ app.get('/urls/:shortURL', (req, res) => {
 })
        // create link to full length url page from shor URL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -106,11 +139,8 @@ app.post('/register', (req, res) => {
   }
   
   const userId = generateRandomString();
-  users[userId] = {  
-    "id": userId,
-    "email": req.body.email,
-    "password": req.body.password 
-  };
+  users[userId] = new User(userId, req.body.email, req.body.password, true)
+  
   res.cookie('user_id', userId);
   res.redirect('/urls');
 
@@ -135,9 +165,11 @@ app.post('/login', (req, res) => {
     return res.redirect('/login');
   }
 
-  const cookie = result.data.id;
-  res.cookie('user_id', cookie);
+  const currentUser = result.data.id;
+  res.cookie('user_id', currentUser);
 
+  users[currentUser].loggedIn = true;
+  
   res.redirect('/urls');
 });
 
@@ -145,6 +177,8 @@ app.post('/login', (req, res) => {
 
 // route for logout
 app.post('/logout', (req, res) => {
+  const currentUser = users[req.cookies.user_id];
+  currentUser.loggedIn = false;
   res.clearCookie('user_id');
   res.redirect('/urls');
 });
