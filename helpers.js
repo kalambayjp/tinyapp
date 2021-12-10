@@ -1,3 +1,5 @@
+const bcrypt = require('bcryptjs');
+
 const verifyEmail = (email, db) => {
   if (!email) {
     return {error: 'No Email was given!'}
@@ -23,7 +25,7 @@ const verifyLogin = (email, password, db) => {
   if (!potentialUser) {
     return {error: 'Email not found'}
   }
-  if (password !== potentialUser.password) {
+  if (!bcrypt.compareSync(password, potentialUser.password)) {
     return {error: 'Incorrect password'}
   }
   return {error: null, data: potentialUser};

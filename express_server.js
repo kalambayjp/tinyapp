@@ -3,6 +3,7 @@ const app = express();
 const port = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 const {verifyEmail, verifyLogin} = require('./helpers')
 
 app.use(bodyParser.urlencoded({extended: false}));
@@ -166,7 +167,8 @@ app.post('/register', (req, res) => {
   }
   
   const userId = generateRandomString();
-  users[userId] = new User(userId, req.body.email, req.body.password, true)
+  const password = req.body.password
+  users[userId] = new User(userId, req.body.email, bcrypt.hashSync(password, 10), true)
   
   res.cookie('user_id', userId);
   res.redirect('/urls');
