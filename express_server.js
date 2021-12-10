@@ -61,17 +61,38 @@ function generateRandomString() {
 };
 //route to home page with list of URLs
 app.get('/urls', (req, res) => {
-  const templateVars = {urlDatabase, email: ""};
+  const templateVars = {currentUserUrls: {}, email: "", loggedIn: null};
   if (users[req.cookies.user_id]) {
     templateVars.email = users[req.cookies.user_id]["email"];
   }
+  
+  if (req.cookies.user_id) { 
+    const currentUser = req.cookies.user_id;
+    
+    for (const url in urlDatabase) {
+      if (urlDatabase[url].userId === currentUser) {
+        templateVars.currentUserUrls[url] = urlDatabase[url];
+      }
+    }
+
+    if (users[currentUser].loggedIn === true) {
+      templateVars.loggedIn = true;
+    }
+  }
+  
   res.render('urls_index', templateVars)
 });
         // create post request to delete URL
 app.post('/urls/:shortURL/delete', (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect('/urls');
+  const currentUser = req.cookies.user_id;
+  const shortUrl = req.params.shortURL
+  
+  if (currentUser === urlDatabase[shortUrl].userId) {
+    delete urlDatabase[shortUrl];
+    res.redirect('/urls');
+  }
+  // console.log(urlDatabase[shortUrl])
+  res.redirect('/login');
 });
 
 
@@ -99,9 +120,15 @@ app.post("/urls", (req, res) => {
 
 // edit an existing URL
 app.post('/urls/:id', (req, res) => {
+  const currentUser = req.cookies.user_id;
   const shortUrl = req.params.id
-  urlDatabase[shortUrl].longURL = req.body.newURL
-  res.redirect('/urls');
+  if (currentUser === urlDatabase[shortUrl].userId) { 
+    urlDatabase[shortUrl].longURL = req.body.newURL
+    res.redirect('/urls');
+  }
+  // console.log(urlDatabase[shortUrl]);
+
+  res.redirect('/login')
 });
 
 

@@ -22,22 +22,28 @@
         </tr>
       </thead>
       <tbody>
-        <% for(let url in urlDatabase) { %>
-          <tr>
-            <td><%= url %></td>
-            <td><%= urlDatabase[url].longURL %></td>
-            <td>
-              <form method="GET" action="/urls/<%= url %>/">
-                <button type="submit">Edit</button>
-              </form>
+        <% if (loggedIn === true) { %>
+          <% for(let url in currentUserUrls) { %>
+            <tr>
+              <td><%= url %></td>
+              <td><%= currentUserUrls[url].longURL %></td>
+              <td>
+                <form method="GET" action="/urls/<%= url %>/">
+                  <button type="submit">Edit</button>
+                </form>
+              </td>
+              <td>
+                <form method="POST" action="/urls/<%= url %>/delete">
+                  <button type="submit">Delete</button>
+                </form>          
             </td>
-            <td>
-              <form method="POST" action="/urls/<%= url %>/delete">
-                <button type="submit">Delete</button>
-              </form>          
-          </td>
+            </tr>
+          <% } %>
+        <% } else { %>
+            <tr>
+                <td>Sign in/Register to Shorten your own URL's!</td>
+            </tr>
 
-          </tr>
         <% } %>
       </tbody>
     </table>
