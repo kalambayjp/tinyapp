@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
 
   return res.redirect('/urls');
@@ -52,7 +52,7 @@ app.post('/register', (req, res) => {
   
   if (result.error) {
     console.log(result.error);
-    throw result.error
+    throw result.error;
   }
   
   const userId = generateRandomString();
@@ -65,13 +65,13 @@ app.post('/register', (req, res) => {
 
 /**   REQUEST LOGIN PAGE    */
 app.get('/login', (req, res) => {
-  const templateVars = {currentUser: {}}
+  const templateVars = {currentUser: {}};
   const currentUser = req.session.user_id;
   
   if (currentUser) {
     res.redirect('/urls');
   }
-  res.render('login', templateVars)
+  res.render('login', templateVars);
 });
 
 /**   POST LOGIN INFO      */
@@ -82,7 +82,7 @@ app.post('/login', (req, res) => {
 
   if (result.error) {
     console.log(result.error);
-    throw result.error 
+    throw result.error; 
   }
   
   const currentUser = result.data.id;
@@ -118,7 +118,7 @@ app.get('/urls', (req, res) => {
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
 
   templateVars["currentUser"] = users[currentUser];
@@ -129,7 +129,7 @@ app.get('/urls', (req, res) => {
     }
   }
   
-  return res.render('urls_index', templateVars)
+  return res.render('urls_index', templateVars);
 });
 
 /** REQUEST CREATE NEW URL PAGE  */ 
@@ -139,7 +139,7 @@ app.get("/urls/new", (req, res) => {
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
 
   if (users[currentUser].loggedIn === true) {  
@@ -150,8 +150,8 @@ app.get("/urls/new", (req, res) => {
 
 /**  POST CREATED URL   */
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString()
-  urlDatabase[shortURL] = new Url(req.body.longURL, req.session.user_id)
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = new Url(req.body.longURL, req.session.user_id);
   
   res.redirect(`/urls/${shortURL}`);        
 });
@@ -162,7 +162,7 @@ app.post('/urls/:id', (req, res) => {
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
 
   const shortUrl = req.params.id;
@@ -173,17 +173,17 @@ app.post('/urls/:id', (req, res) => {
   }
 
   delete req.session.user_id;
-  throw `You can only edit/delete your own saved url's!`
+  throw `You can only edit/delete your own saved url's!`;
 });
 
 /**  POST REQUEST TO DELETE EXISTING URL  */
 app.post('/urls/:shortURL/delete', (req, res) => {
-  const shortUrl = req.params.shortURL
+  const shortUrl = req.params.shortURL;
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
   
   if (users[currentUser].id === urlDatabase[shortUrl].userId) {
@@ -192,17 +192,17 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   }
 
   delete req.session.user_id;
-  throw `You can only edit/delete your own saved url's!`
+  throw `You can only edit/delete your own saved url's!`;
 });
 
 /** REQUEST PAGE WITH SPECIFIC LONG/SHORT URL PAIR */
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL}
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL};
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`
+    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
   }
 
   templateVars["currentUser"] = users[currentUser];
@@ -219,7 +219,6 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   return res.redirect(longURL);
 });
-
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}!`);
