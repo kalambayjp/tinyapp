@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-        <% if (loggedIn === true) { %>
+        <% if (currentUser.loggedIn === true) { %>
           <% for(let url in currentUserUrls) { %>
             <tr>
               <td><%= url %></td>

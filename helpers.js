@@ -29,8 +29,19 @@ const verifyLogin = (email, password, db) => {
     return {error: 'Incorrect password'}
   }
   return {error: null, data: potentialUser};
-}
+};
+
+const generateRandomString = () => {
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < 6; i++){
+    randomString += characters[Math.floor(Math.random() * 36)]
+  }
+  return randomString;
+};
+
 module.exports = {
   verifyEmail,
-  verifyLogin
+  verifyLogin,
+  generateRandomString
 };
