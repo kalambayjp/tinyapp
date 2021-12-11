@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
   
   if (!currentUser) {
     delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    return res.redirect('/login');
   }
 
   return res.redirect('/urls');
@@ -51,7 +51,6 @@ app.post('/register', (req, res) => {
   const result = verifyEmail(email, users);
   
   if (result.error) {
-    console.log(result.error);
     throw result.error;
   }
   
@@ -81,7 +80,6 @@ app.post('/login', (req, res) => {
   const result = verifyLogin(email, password, users);
 
   if (result.error) {
-    console.log(result.error);
     throw result.error; 
   }
   
