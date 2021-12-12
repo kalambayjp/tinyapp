@@ -36,27 +36,30 @@ app.get('/', (req, res) => {
 
 /**  REQUEST REGISTRATION PAGE  */
 app.get('/register', (req, res) => {
-  const templateVars = {currentUser: {}};
-  const currentUser = req.session.user_id;
+  const templateVars = {currentUser: {}, error: null};
+  currentUser = req.session.user_id;
   
   if (currentUser) {
-    res.redirect('/urls');
+    return res.redirect('/urls');
   }
-  res.render('register', templateVars);
+  return res.render('register', templateVars);
 });
 
 /**  POST REGISTRATION */ 
 app.post('/register', (req, res) => {
   const email = req.body.email;
-  const result = verifyEmail(email, users);
+  const password = req.body.password;
+  const result = verifyEmail(email, password, users);
   
   if (result.error) {
-    throw result.error;
+    const templateVars = {currentUser: {}, error: result.error};
+
+    console.log(result.error);
+    return res.render('register', templateVars)
   }
   
   const userId = generateRandomString();
-  const password = req.body.password;
-  users[userId] = new User(userId, req.body.email, bcrypt.hashSync(password, 10), true);
+  users[userId] = new User(userId, email, bcrypt.hashSync(password, 10), true);
   req.session.user_id = userId;
 
   return res.redirect('/urls');
@@ -64,13 +67,13 @@ app.post('/register', (req, res) => {
 
 /**   REQUEST LOGIN PAGE    */
 app.get('/login', (req, res) => {
-  const templateVars = {currentUser: {}};
+  const templateVars = {currentUser: {}, error: null};
   const currentUser = req.session.user_id;
   
   if (currentUser) {
-    res.redirect('/urls');
+    return res.redirect('/urls');
   }
-  res.render('login', templateVars);
+  return res.render('login', templateVars);
 });
 
 /**   POST LOGIN INFO      */
@@ -80,7 +83,10 @@ app.post('/login', (req, res) => {
   const result = verifyLogin(email, password, users);
 
   if (result.error) {
-    throw result.error; 
+    const templateVars = {currentUser: {}, error: result.error};
+
+    console.log(result.error);
+    return res.render('login', templateVars)
   }
   
   const currentUser = result.data.id;

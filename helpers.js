@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 
-const verifyEmail = (email, db) => {
-  if (!email) {
-    return {error: 'No Email was given!'}
+const verifyEmail = (email, password, db) => {
+  if (!email || !password) {
+    return {error: 'Missing Information, please try again!'}
   }
   for (const user in db) {
     if (db[user]["email"] === email) {
