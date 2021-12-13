@@ -18,7 +18,6 @@ app.use(cookieSession({
   keys: ["I like potatoes, cheese and gravy", "key"],
 }));
 
-
 /*
 *         /, LOGIN/REGISTER, LOGOUT   
 */
@@ -27,19 +26,18 @@ app.get('/', (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
     return res.redirect('/login');
-  }
-
-  return res.redirect('/urls');
+  } else if (users[currentUser].loggedIn) {
+    return res.redirect('/urls');
+  } 
 });
 
 /**  REQUEST REGISTRATION PAGE  */
 app.get('/register', (req, res) => {
   const templateVars = {currentUser: {}, error: null};
-  currentUser = req.session.user_id;
+  const userId = req.session.user_id;
   
-  if (currentUser) {
+  if (userId) {
     return res.redirect('/urls');
   }
   return res.render('register', templateVars);
@@ -55,7 +53,7 @@ app.post('/register', (req, res) => {
     const templateVars = {currentUser: {}, error: result.error};
 
     console.log(result.error);
-    return res.render('register', templateVars)
+    return res.render('register', templateVars);
   }
   
   const userId = generateRandomString();
@@ -86,7 +84,7 @@ app.post('/login', (req, res) => {
     const templateVars = {currentUser: {}, error: result.error};
 
     console.log(result.error);
-    return res.render('login', templateVars)
+    return res.render('login', templateVars);
   }
   
   const currentUser = result.data.id;
@@ -99,14 +97,10 @@ app.post('/login', (req, res) => {
 /** POST REQUEST TO LOGOUT */
 app.post('/logout', (req, res) => {
   const currentUser = req.session.user_id;
-  
-  if (!currentUser) {
-    delete req.session.user_id;
-    return res.redirect('/login');
-  }
 
   currentUser.loggedIn = false;
-  delete req.session.user_id;
+  req.session = null;
+
   return res.redirect('/login');
 });
 
@@ -121,18 +115,20 @@ app.get('/urls', (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
-  }
+    templateVars.error = `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.currentUser = {};
 
-  templateVars["currentUser"] = users[currentUser];
+    return res.render('login', templateVars);
+  }
   
+  templateVars["currentUser"] = users[currentUser];
+
   for (const url in urlDatabase) {
     if (urlDatabase[url].userId === users[currentUser].id) {
       templateVars.currentUserUrls[url] = urlDatabase[url];
     }
   }
-  
+
   return res.render('urls_index', templateVars);
 });
 
@@ -142,11 +138,11 @@ app.get("/urls/new", (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    
+    return res.redirect('/login');
   }
 
-  if (users[currentUser].loggedIn === true) {  
+  if (users[currentUser].loggedIn) {  
     templateVars["currentUser"] = users[currentUser];
     res.render("urls_new", templateVars);
   } 
@@ -165,19 +161,26 @@ app.post('/urls/:id', (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.error = `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.currentUser = {};
+
+    return res.render('login', templateVars);
   }
 
   const shortUrl = req.params.id;
 
-  if (users[currentUser].id === urlDatabase[shortUrl].userId) { 
-    urlDatabase[shortUrl].longURL = req.body.newURL;
-    return res.redirect('/urls');
+  if (users[currentUser].id !== urlDatabase[shortUrl].userId) { 
+    templateVars.error = `This feature is only available for your own url's`;
+    templateVars.currentUser = users[currentUser];
+    
+    users[currentUser].loggedIn = false;
+    req.session = null;
+
+    return res.render('login', templateVars);
   }
 
-  delete req.session.user_id;
-  throw `You can only edit/delete your own saved url's!`;
+  urlDatabase[shortUrl].longURL = req.body.newURL;
+  return res.redirect('/urls');
 });
 
 /**  POST REQUEST TO DELETE EXISTING URL  */
@@ -186,17 +189,23 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.error = `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.currentUser = {};
+
+    return res.render('login', templateVars);
   }
   
-  if (users[currentUser].id === urlDatabase[shortUrl].userId) {
-    delete urlDatabase[shortUrl];
-    return res.redirect('/urls');
-  }
+  if (users[currentUser].id !== urlDatabase[shortUrl].userId) {
+    templateVars.error = `This feature is only available for your own url's`;
+    templateVars.currentUser = users[currentUser];
+    
+    users[currentUser].loggedIn = false;
+    req.session = null;
 
-  delete req.session.user_id;
-  throw `You can only edit/delete your own saved url's!`;
+    return res.render('login', templateVars);
+  }
+  delete urlDatabase[shortUrl];
+  return res.redirect('/urls');
 });
 
 /** REQUEST PAGE WITH SPECIFIC LONG/SHORT URL PAIR */
@@ -205,12 +214,22 @@ app.get('/urls/:shortURL', (req, res) => {
   const currentUser = req.session.user_id;
   
   if (!currentUser) {
-    delete req.session.user_id;
-    throw `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.error = `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.currentUser = {};
+
+    return res.render('login', templateVars);
   }
 
   templateVars["currentUser"] = users[currentUser];
 
+  if (templateVars.currentUser.id !== urlDatabase[templateVars.shortURL].userId) {
+    templateVars.error = `This feature is only available for your own url's`;
+    
+    users[currentUser].loggedIn = false;
+    req.session = null;
+
+    return res.render('login', templateVars);
+  }
   return res.render('urls_show', templateVars);
 });
 
@@ -221,6 +240,26 @@ app.get('/urls/:shortURL', (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
+  const currentUser = req.session.user_id;
+  const templateVars = {};
+  
+  if (!currentUser) {
+    templateVars.error = `Looks like you aren't signed in/Registered. Please do so to use this awesome app!`;
+    templateVars.currentUser = {};
+
+    return res.render('login', templateVars);
+  }
+
+  if (users[currentUser].id !== urlDatabase[req.params.shortURL].userId) {
+    templateVars.error = `This feature is only available for your own url's`;
+    templateVars.currentUser = users[currentUser];
+    
+    users[currentUser].loggedIn = false;
+    req.session = null;
+
+    return res.render('login', templateVars);
+  }
+
   return res.redirect(longURL);
 });
 
